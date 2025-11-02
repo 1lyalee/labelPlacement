@@ -37,18 +37,14 @@ resetBtn.addEventListener("click", () => {
 
 function drawShape() {
   
-    // 高 DPI 适配
-    function fixDPI() {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.round(rect.width * dpr);
-      canvas.height = Math.round(rect.height * dpr);
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    fixDPI();
-    window.addEventListener('resize', fixDPI);
+    // 不需要高DPI适配，直接设置canvas尺寸
+    canvas.width = 720;   // 实际绘图宽度
+    canvas.height = 480;  // 实际绘图高度
+
+    // 控制显示大小（响应屏幕宽度，同时不超过720px）
+    canvas.style.width = '100%';     // 占满父容器宽度
+    canvas.style.maxWidth = '720px'; // 最大宽度限制
+    canvas.style.height = 'auto';    // 高度自动按比例
   
     // 工具函数
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
