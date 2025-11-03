@@ -7,7 +7,7 @@ const input = document.getElementById('labelInput');
 // 状态
 let drawing = false;
 let currentPoints = [];
-let shapes = []; // 存储所有已闭合的 shape
+let shapes = []; // 所有已闭合的 shape
 const CLOSE_THRESHOLD = 100;
 
 // 样式
@@ -35,18 +35,18 @@ resetBtn.addEventListener("click", () => {
 
 
 
+
 function drawShape() {
   
-    // 不需要高DPI适配，直接设置canvas尺寸
-    canvas.width = 720;   // 实际绘图宽度
-    canvas.height = 480;  // 实际绘图高度
+    canvas.width = 800;   
+    canvas.height = 600;  
 
-    // 控制显示大小（响应屏幕宽度，同时不超过720px）
-    canvas.style.width = '100%';     // 占满父容器宽度
-    canvas.style.maxWidth = '720px'; // 最大宽度限制
-    canvas.style.height = 'auto';    // 高度自动按比例
+    canvas.style.width = '100%';   
+    canvas.style.maxWidth = '800px';
+    canvas.style.height = 'auto';   
   
-    // 工具函数
+
+    // =
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   
     const clearCanvas = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -73,7 +73,7 @@ function drawShape() {
         for (const shape of shapes) {
           drawShape(shape.points);
           if (shape.labelPoint) {
-            drawLabelPoint(shape.labelPoint); // ✅ 移到循环内部
+            drawLabelPoint(shape.labelPoint); 
             drawLabelText(shape.labelPoint);
           }
         }
@@ -206,41 +206,76 @@ function drawShape() {
         // 2️⃣ 射线法判断点是否在多边形内部，并获取所有交点
         const intersections = [];
         const x0 = labelPoint.x;
+        const y0 = labelPoint.y;
     
+        // ============ 垂直方向 intersections（原逻辑） ============
+        const intersectionsY = [];
         for (let i = 0; i < points.length; i++) {
             const a = points[i];
             const b = points[(i + 1) % points.length];
-    
-            // 只考虑与水平射线相交
+
             if ((a.x - x0) * (b.x - x0) <= 0 && a.x !== b.x) {
-                // 计算交点的 Y 坐标
                 const t = (x0 - a.x) / (b.x - a.x);
                 const yIntersect = a.y + t * (b.y - a.y);
-                intersections.push(yIntersect);
+                intersectionsY.push(yIntersect);
             }
         }
-    
-        // 按 Y 排序
-        intersections.sort((a, b) => a - b);
-    
-        // 3️⃣ 判断奇偶
-        if (intersections.length % 2 === 0 && intersections.length >= 2) {
-            let maxDist = -Infinity;
-            let bestY = labelPoint.y;
-        
-            for (let i = 0; i < intersections.length; i += 2) {
-                const y1 = intersections[i];
-                const y2 = intersections[i + 1];
+        intersectionsY.sort((a, b) => a - b);
+
+        let bestY = labelPoint.y;
+        let maxVerticalDist = -Infinity;
+
+        if (intersectionsY.length % 2 === 0 && intersectionsY.length >= 2) {
+            for (let i = 0; i < intersectionsY.length; i += 2) {
+                const y1 = intersectionsY[i];
+                const y2 = intersectionsY[i + 1];
                 const dist = y2 - y1;
-                if (dist > maxDist) {
-                    maxDist = dist;
-                    bestY = (y1 + y2) / 2; // 区间中点
+                if (dist > maxVerticalDist) {
+                    maxVerticalDist = dist;
+                    bestY = (y1 + y2) / 2;
                 }
             }
-        
+        }
+
+
+         // ============ 水平方向 intersections2 ============
+        const intersectionsX = [];
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i];
+            const b = points[(i + 1) % points.length];
+
+            if ((a.y - y0) * (b.y - y0) <= 0 && a.y !== b.y) {
+                const t = (y0 - a.y) / (b.y - a.y);
+                const xIntersect = a.x + t * (b.x - a.x);
+                intersectionsX.push(xIntersect);
+            }
+        }
+        intersectionsX.sort((a, b) => a - b);
+
+        let bestX = labelPoint.x;
+        let maxHorizontalDist = -Infinity;
+
+        if (intersectionsX.length >= 2) {
+            for (let i = 0; i < intersectionsX.length; i += 2) {
+                const x1 = intersectionsX[i];
+                const x2 = intersectionsX[i + 1];
+                const dist = x2 - x1;
+                if (dist > maxHorizontalDist) {
+                    maxHorizontalDist = dist;
+                    bestX = (x1 + x2) / 2;
+                }
+            }
+        }
+
+
+
+        // ============ 比较哪个方向空间更大 ============
+        if (maxHorizontalDist > maxVerticalDist) {
+            labelPoint.x = bestX;
+        } else {
             labelPoint.y = bestY;
         }
-        // 如果是奇数，说明点在内部，不调整
+
     
         return labelPoint;
     }
